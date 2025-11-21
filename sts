@@ -1,53 +1,33 @@
 @echo off
-:: Enable delayed variable expansion
 setlocal enabledelayedexpansion
 
-:: Initialize sequence counter
 set counter=1
+set rootDir=D:\JAGSP-LIVE\JAGSP-P-SCAN\J7R
 
-:: Define the root directory where ISBN folders are stored
-set rootDir=D:\MUSTANG\TEST-STS
-
-:: Loop through all directories (ISBN folders) in the root directory
-for /d %%A in (%rootDir%\*) do (
-    :: Check if the directory contains a 'TIF' subdirectory
+for /d %%A in ("%rootDir%\*") do (
     if exist "%%A\TIF" (
-        :: Set ISBN_NAME as the folder name (i.e., the ISBN number)
-        set ISBN_NAME=%%~nxA
+        set "ISBN_NAME=%%~nxA"
+        set "STS_FILE=%%A\TIF\!ISBN_NAME!.sts"
 
-        :: Set the file path for the .sts file to be created inside the TIF folder
-        set STS_FILE=%%A\TIF\!ISBN_NAME!.sts
+        echo Checking for "!STS_FILE!"...
 
-        :: Print for debugging the path being used
-        echo Checking for !STS_FILE!...
-
-        :: Check if the .sts file already exists
         if exist "!STS_FILE!" (
-            :: Rename the existing .sts file before modifying it
-            set RENAMED_FILE=%%A\TIF\!ISBN_NAME!_OLD.sts
+            set "RENAMED_FILE=%%A\TIF\!ISBN_NAME!_OLD.sts"
             ren "!STS_FILE!" "!RENAMED_FILE!"
-            echo Renamed existing file to !RENAMED_FILE!
-
-            :: Create the new .sts file with the correct BackendReady sequence
-            echo BackendReady!counter! > "!STS_FILE!"
-
-            :: Print the created .sts file for confirmation
-            echo Created !STS_FILE! with BackendReady!counter!
-
-        ) else (
-            :: If file doesn't exist, create it
-            echo BackendReady!counter! > "!STS_FILE!"
-            echo Created !STS_FILE! with BackendReady!counter!
+            echo Renamed existing file to "!RENAMED_FILE!"
         )
 
-        :: Increment the counter, reset after 5
+        :: *** WRITE EXACTLY ONE LINE, NO SPACE, NO EXTRA LINE ***
+        > "!STS_FILE!" <nul set /p "=BackendReady!counter!"
+
+        echo Created "!STS_FILE!" with BackendReady!counter!
+
         set /a counter+=1
         if !counter! gtr 5 set counter=1
     ) else (
-        echo TIF folder does not exist in %%A. Skipping this folder.
+        echo TIF folder does not exist in %%A. Skipping.
     )
 )
 
-:: Inform user that the process is complete
-echo All .sts files have been checked/created with the correct BackendReady sequence.
+echo Done.
 pause
